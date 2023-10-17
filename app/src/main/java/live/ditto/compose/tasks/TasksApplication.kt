@@ -21,8 +21,8 @@ class TasksApplication: Application() {
         // Create an instance of Ditto
        ditto = Ditto(androidDependencies, DittoIdentity.OnlinePlayground(
             androidDependencies,
-            BuildConfig.DITTO_APP_ID,
-            BuildConfig.DITTO_LICENSE_TOKEN,
+            "YOUR_APP_ID",
+            "YOUR_TOKEN",
             enableDittoCloudSync = true)
         )
 
