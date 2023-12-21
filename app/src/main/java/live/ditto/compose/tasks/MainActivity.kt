@@ -6,10 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.lifecycleScope
 import live.ditto.compose.tasks.ui.theme.TasksJetpackComposeTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import live.ditto.DittoError
 import live.ditto.compose.tasks.DittoHandler.Companion.ditto
 import live.ditto.compose.tasks.edit.EditScreen
@@ -38,7 +40,10 @@ class MainActivity : ComponentActivity() {
             Root()
         }
 
-        ditto.store.get("tasks").find("isDeleted == true").evict()
+        lifecycleScope.launch {
+            ditto.store.execute("EVICT FROM tasks WHERE isDeleted = true")
+        }
+
         requestMissingPermissions()
     }
 

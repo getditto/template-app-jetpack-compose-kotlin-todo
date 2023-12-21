@@ -1,33 +1,46 @@
 package live.ditto.compose.tasks.list
 
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import live.ditto.DittoDocumentId
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import live.ditto.compose.tasks.DittoHandler.Companion.ditto
 import live.ditto.compose.tasks.data.Task
+import java.lang.Exception
 
 class TasksListScreenViewModel: ViewModel() {
     val tasks: MutableLiveData<List<Task>> = MutableLiveData(emptyList())
 
-    private val subscription = ditto.store.collection("tasks")
-        .find("!isDeleted").subscribe()
-    private val liveQuery = ditto.store["tasks"]
-        .find("!isDeleted").observeLocal { docs, _ ->
-            tasks.postValue(docs.map { Task(it) })
+    init {
+        val query = "SELECT * FROM tasks WHERE isDeleted != true"
+        ditto.sync.registerSubscription(query)
+        ditto.store.registerObserver(query) { result ->
+            val list = result.items.map { item -> Task.fromJson(item.jsonString()) }
+             tasks.postValue(list)
         }
-
-    fun toggle(taskId: String) {
-        ditto.store.collection("tasks")
-            .findById(DittoDocumentId(taskId))
-            .update { dittoDocument ->
-                val mutableDoc = dittoDocument ?: return@update
-                mutableDoc["isCompleted"].set(!mutableDoc["isCompleted"].booleanValue)
-            }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        liveQuery.close()
-        subscription.close()
+    fun toggle(taskId: String) {
+        viewModelScope.launch {
+            try {
+                val doc = ditto.store.execute(
+                    "SELECT * FROM tasks WHERE _id = :_id",
+                    mapOf("_id" to taskId)
+                ).items.first()
+
+                val isCompleted = doc.value["isCompleted"] as Boolean
+
+                ditto.store.execute(
+                    "UPDATE tasks SET isCompleted = :toggled WHERE _id = :_id",
+                    mapOf(
+                        "toggled" to !isCompleted,
+                        "_id" to taskId
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e("ERROR:", e.message.toString())
+            }
+        }
     }
 }
