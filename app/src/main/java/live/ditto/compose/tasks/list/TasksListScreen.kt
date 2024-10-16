@@ -1,6 +1,8 @@
 package live.ditto.compose.tasks.list
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ExtendedFloatingActionButton
 import androidx.compose.material.FabPosition
 import androidx.compose.material.FloatingActionButtonDefaults
@@ -65,8 +67,8 @@ fun TasksList(
     onToggle: ((taskId: String) -> Unit)? = null,
     onClickBody: ((taskId: String) -> Unit)? = null
 ) {
-    Column() {
-        tasks.forEach { task ->
+    LazyColumn {
+        items(tasks) { task ->
             TaskRow(
                 task = task,
                 onClickBody = { onClickBody?.invoke(it._id) },
